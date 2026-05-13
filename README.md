@@ -1,6 +1,71 @@
 # Roblox Tennis Game — Modern Pro Arena Blueprint
 
-## 1) Build Instructions (Studio Setup)
+## Repository File Structure
+
+Copy these files into Roblox Studio exactly as shown:
+
+| Repo Path | Studio Location |
+|---|---|
+| `src/ServerScriptService/TennisGame.server.lua` | **ServerScriptService** → Script named `TennisGame` |
+| `src/StarterPack/TennisRacket/LocalScript.lua` | **StarterPack** → Tool named `TennisRacket` → LocalScript |
+| `src/StarterGui/ScoreboardGui/LocalScript.lua` | **StarterGui** → ScreenGui named `ScoreboardGui` → LocalScript |
+
+---
+
+## 1) Workspace Hierarchy & Modeling — Exact Part Specifications
+
+Create a **Model** named `TennisArena` in **Workspace** containing all parts below.
+
+### Required Studio Objects in Other Services
+
+Before running the game, create these in the Explorer:
+
+| Service | Type | Name | Notes |
+|---|---|---|---|
+| **ReplicatedStorage** | RemoteEvent | `ScoreUpdated` | Server → all clients (score data) |
+| **ReplicatedStorage** | RemoteEvent | `HitBall` | Client → server (racket hit request) |
+| **Teams** | Team | `Team A` | BrickColor: Bright blue |
+| **Teams** | Team | `Team B` | BrickColor: Bright red |
+
+### TennisArena Parts
+
+| Name | Shape | Size (X, Y, Z) | Position (X, Y, Z) | Color | Material | Notes |
+|---|---|---|---|---|---|---|
+| `CourtFloor` | Block | 78, 1, 36 | 0, 0.5, 0 | Navy blue `(20, 46, 120)` | SmoothPlastic | Anchored |
+| `Net` | Block | 36, 3.5, 0.4 | 0, 2.25, 0 | White | Neon | Anchored, CanCollide = **true** |
+| `Detector_SideA` | Block | 40, 2, 4 | 0, 1, −51 | any | SmoothPlastic | Anchored, Transparency=1, CanCollide=**false**, CanTouch=**true** |
+| `Detector_SideB` | Block | 40, 2, 4 | 0, 1, 51 | any | SmoothPlastic | Anchored, Transparency=1, CanCollide=**false**, CanTouch=**true** |
+| `TennisBall` | **Sphere** | 1, 1, 1 | 0, 3, −20 | Yellow `(255, 220, 50)` | SmoothPlastic | **Not** anchored; see physics below |
+
+### TennisBall — CustomPhysicalProperties
+
+Open the `TennisBall` part → Properties → **CustomPhysicalProperties = true**, then set:
+
+| Property | Value | Reason |
+|---|---|---|
+| **Density** | `0.50` | Lighter than default so impulse travels well |
+| **Friction** | `0.30` | Low friction for fast court slide |
+| **FrictionWeight** | `1.0` | Default |
+| **Elasticity** | `0.85` | High bounce, like a pressurized tennis ball |
+| **ElasticityWeight** | `1.0` | Default |
+
+Add a **CollectionService tag** `"TennisBall"` to the part (via the Tag Editor plugin or Script).
+
+### Court Markings (decorative parts, Anchored, CanCollide = false)
+
+| Part | Size (X, Y, Z) | Position (X, Y, Z) | Color |
+|---|---|---|---|
+| `Line_Baseline_A` | 36, 0.1, 0.3 | 0, 1.05, −39 | White |
+| `Line_Baseline_B` | 36, 0.1, 0.3 | 0, 1.05, 39 | White |
+| `Line_Service_A` | 27, 0.1, 0.3 | 0, 1.05, −21 | White |
+| `Line_Service_B` | 27, 0.1, 0.3 | 0, 1.05, 21 | White |
+| `Line_Center` | 0.3, 0.1, 42 | 0, 1.05, 0 | White |
+| `Line_Side_Left` | 0.3, 0.1, 78 | −18, 1.05, 0 | White |
+| `Line_Side_Right` | 0.3, 0.1, 78 | 18, 1.05, 0 | White |
+
+---
+
+## 2) Build Instructions (Studio Setup)
 
 1. **Create court root**
    - Add a `Model` named `TennisArena`.
