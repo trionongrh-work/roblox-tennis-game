@@ -73,9 +73,9 @@ Properties:
 ```lua
 -- ServerScriptService/OutBoundsHandler.server.lua
 local CollectionService = game:GetService("CollectionService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage = game:GetService("ServerStorage")
 
-local pointScoredEvent = ReplicatedStorage:WaitForChild("PointScored") -- BindableEvent (server-only scoring signal)
+local pointScoredEvent = ServerStorage:WaitForChild("PointScored") -- BindableEvent (server-only scoring signal)
 
 local function isBall(part)
 	return part and part.Name == "TennisBall"
@@ -110,14 +110,15 @@ end
 
 ```lua
 -- ServerScriptService/TennisScoring.server.lua
+local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Create in Studio (ReplicatedStorage):
--- BindableEvent named "PointScored" (server receives team that won the rally)
--- RemoteEvent named "ScoreUpdated" (server broadcasts score text/state)
+-- Create in Studio:
+-- ServerStorage/BindableEvent named "PointScored" (server receives team that won the rally)
+-- ReplicatedStorage/RemoteEvent named "ScoreUpdated" (server broadcasts score text/state)
 
-local pointScoredEvent = ReplicatedStorage:WaitForChild("PointScored")
-local scoreUpdatedEvent = ReplicatedStorage:WaitForChild("ScoreUpdated")
+local pointScoredEvent = ServerStorage:WaitForChild("PointScored")
+local scoreUpdatedRemote = ReplicatedStorage:WaitForChild("ScoreUpdated") -- RemoteEvent
 
 local SCORE_STEPS = {0, 15, 30, 40}
 
@@ -156,7 +157,7 @@ local function awardPoint(teamName)
 		resetPoints()
 	end
 
-	scoreUpdatedEvent:FireAllClients({
+	scoreUpdatedRemote:FireAllClients({
 		mode = matchState.mode,
 		homePoints = SCORE_STEPS[matchState.teams.Home.pointIndex],
 		awayPoints = SCORE_STEPS[matchState.teams.Away.pointIndex],
