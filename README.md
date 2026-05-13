@@ -146,11 +146,11 @@ local function getDisplayPoints(teamPoints, otherPoints)
 		if teamPoints == otherPoints then
 			return "40" -- Deuce shown as 40-40 on board text below
 		elseif teamPoints == otherPoints + 1 then
-			return "Ad"
+			return "Advantage"
 		end
 		return "40" -- Trailing side during opponent advantage is still displayed as 40
 	end
-	return POINT_DISPLAY_VALUES[math.min(teamPoints + 1, 4)]
+	return POINT_DISPLAY_VALUES[math.min(teamPoints + 1, 4)] -- Capped to highest normal point display (40)
 end
 
 local function hasGameWon(teamPoints, otherPoints)
