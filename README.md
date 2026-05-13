@@ -76,6 +76,7 @@ local CollectionService = game:GetService("CollectionService")
 local ServerStorage = game:GetService("ServerStorage")
 
 local pointScoredEvent = ServerStorage:WaitForChild("PointScored") -- BindableEvent (server-to-server scoring signal)
+assert(pointScoredEvent:IsA("BindableEvent"), "PointScored in ServerStorage must be a BindableEvent")
 
 local function isBall(part)
 	return part and CollectionService:HasTag(part, "TennisBall")
@@ -123,6 +124,7 @@ assert(pointScoredEvent:IsA("BindableEvent"), "PointScored in ServerStorage must
 assert(scoreUpdatedRemote:IsA("RemoteEvent"), "ScoreUpdated in ReplicatedStorage must be a RemoteEvent")
 
 local POINT_DISPLAY_VALUES = {"0", "15", "30", "40"}
+local DEUCE_DISPLAY_VALUE = "40"
 
 local matchState = {
 	mode = "2v2", -- "1v1" or "2v2"
@@ -142,16 +144,20 @@ local function resetPoints()
 end
 
 local function getDisplayPoints(teamPoints, otherPoints)
+	if teamPoints < 0 or otherPoints < 0 then
+		return POINT_DISPLAY_VALUES[1]
+	end
+
 	if teamPoints >= 3 and otherPoints >= 3 then
 		if teamPoints == otherPoints then
-			return "40" -- Display as 40 when rally is tied at deuce phase
+			return DEUCE_DISPLAY_VALUE -- Display as 40 when rally is tied at deuce phase
 		elseif teamPoints == otherPoints + 1 then
 			return "Advantage"
 		end
-		return "40" -- Trailing side during opponent advantage is still displayed as 40
+		return DEUCE_DISPLAY_VALUE -- Trailing side during opponent advantage is still displayed as 40
 	end
 	if teamPoints >= 4 then
-		return "40" -- Safety cap for any non-deuce overflow input
+		return DEUCE_DISPLAY_VALUE -- Safety cap for any non-deuce overflow input
 	end
 	return POINT_DISPLAY_VALUES[teamPoints + 1] -- Normal range mapping (0..3) to array indices (1..4)
 end
