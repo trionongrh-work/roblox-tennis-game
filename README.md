@@ -75,7 +75,7 @@ Properties:
 local CollectionService = game:GetService("CollectionService")
 local ServerStorage = game:GetService("ServerStorage")
 
-local pointScoredEvent = ServerStorage:WaitForChild("PointScored") -- BindableEvent (server-only scoring signal)
+local pointScoredEvent = ServerStorage:WaitForChild("PointScored") -- BindableEvent (server-to-server scoring signal)
 
 local function isBall(part)
 	return part and CollectionService:HasTag(part, "TennisBall")
@@ -150,7 +150,10 @@ local function getDisplayPoints(teamPoints, otherPoints)
 		end
 		return "40" -- Trailing side during opponent advantage is still displayed as 40
 	end
-	return POINT_DISPLAY_VALUES[math.min(teamPoints + 1, 4)] -- Normal range mapping (0..3) to array indices (1..4)
+	if teamPoints >= 4 then
+		return "40" -- Safety cap for any non-deuce overflow input
+	end
+	return POINT_DISPLAY_VALUES[teamPoints + 1] -- Normal range mapping (0..3) to array indices (1..4)
 end
 
 local function hasGameWon(teamPoints, otherPoints)
