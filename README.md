@@ -75,7 +75,7 @@ Properties:
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local pointScoredEvent = ReplicatedStorage:WaitForChild("PointScored") -- RemoteEvent or BindableEvent pattern
+local pointScoredEvent = ReplicatedStorage:WaitForChild("PointScored") -- BindableEvent (server-only scoring signal)
 
 local function isBall(part)
 	return part and part.Name == "TennisBall"
@@ -113,7 +113,7 @@ end
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Create in Studio (ReplicatedStorage):
--- RemoteEvent named "PointScored" (server receives team that won the rally)
+-- BindableEvent named "PointScored" (server receives team that won the rally)
 -- RemoteEvent named "ScoreUpdated" (server broadcasts score text/state)
 
 local pointScoredEvent = ReplicatedStorage:WaitForChild("PointScored")
@@ -129,6 +129,10 @@ local matchState = {
 	}
 }
 
+local function isValidTeamName(teamName)
+	return teamName == "Home" or teamName == "Away"
+end
+
 local function resetPoints()
 	matchState.teams.Home.pointIndex = 1
 	matchState.teams.Away.pointIndex = 1
@@ -141,8 +145,8 @@ local function getScoreText()
 end
 
 local function awardPoint(teamName)
+	if not isValidTeamName(teamName) then return end
 	local team = matchState.teams[teamName]
-	if not team then return end
 
 	if team.pointIndex < #SCORE_STEPS then
 		team.pointIndex += 1
@@ -162,13 +166,12 @@ local function awardPoint(teamName)
 	})
 end
 
-pointScoredEvent.OnServerEvent:Connect(function(player, teamName)
-	-- Optional validation: ensure player belongs to the team in this mode
+pointScoredEvent.Event:Connect(function(teamName)
 	awardPoint(teamName)
 end)
 
--- For server-only event routing (like OutBounds handler), use BindableEvent
--- or call awardPoint("Home"/"Away") directly from server scripts.
+-- Optional: if clients ever need to request a score action, use a separate
+-- RemoteEvent and validate player-team ownership before calling awardPoint.
 ```
 
 ### Team assignment concept
