@@ -121,170 +121,42 @@ Add a **CollectionService tag** `"TennisBall"` to the part (via the Tag Editor p
 
 ## 3) OutBounds / KillZone Setup (Touched Detection)
 
-Create invisible boundary parts around the playable area:
+> **Note:** The actual game implementation in `src/ServerScriptService/TennisGame.server.lua`
+> uses `Detector_SideA` and `Detector_SideB` directly with `Touched` events — no extra boundary
+> parts or BindableEvents are required. The section below documents an alternative pattern for
+> reference only.
 
-- `OutBounds_Left`, `OutBounds_Right`, `OutBounds_Back_Home`, `OutBounds_Back_Away`
-- Optional: `OutBounds_Net` (if ball into net should trigger dead ball)
+The `TennisGame` script handles out-of-bounds automatically:
+- `Detector_SideA` (at z = −51): ball touches it → **Team B** scores (Team A failed to return)
+- `Detector_SideB` (at z = +51): ball touches it → **Team A** scores (Team B failed to return)
 
-Properties:
-- `Transparency = 1`
-- `CanCollide = false`
-- `CanTouch = true`
-- `Anchored = true`
-- Tag with `CollectionService` tag like `"OutBounds"`
-
-### Server Script Concept
-
-```lua
--- ServerScriptService/OutBoundsHandler.server.lua
-local CollectionService = game:GetService("CollectionService")
-local ServerStorage = game:GetService("ServerStorage")
-
-local pointScoredEvent = ServerStorage:WaitForChild("PointScored") -- BindableEvent (server-to-server scoring signal)
-assert(pointScoredEvent:IsA("BindableEvent"), "PointScored in ServerStorage must be a BindableEvent")
-
-local function isBall(part)
-	return part and CollectionService:HasTag(part, "TennisBall")
-end
-
-local function onOutBoundsTouched(zone, hitPart)
-	if not isBall(hitPart) then
-		return
-	end
-
-	-- Server-authoritative ball metadata pattern:
-	-- hitPart:SetAttribute("LastHitTeam", "Home"/"Away")
-	local lastHitTeam = hitPart:GetAttribute("LastHitTeam")
-	if not lastHitTeam then
-		return
-	end
-
-	local scoringTeam = (lastHitTeam == "Home") and "Away" or "Home"
-	pointScoredEvent:Fire(scoringTeam)
-end
-
-for _, zone in ipairs(CollectionService:GetTagged("OutBounds")) do
-	zone.Touched:Connect(function(hitPart)
-		onOutBoundsTouched(zone, hitPart)
-	end)
-end
-```
+For additional out-of-bounds coverage (side tramlines), you can optionally add:
+- `OutBounds_Left` / `OutBounds_Right` — transparent parts along the side tramlines
+- `CanCollide = false`, `CanTouch = true`, `Transparency = 1`, `Anchored = true`
+- Tag with CollectionService tag `"OutBounds"` and extend the touch handler in `TennisGame.server.lua`.
 
 ---
 
-## 4) Core 1v1 / 2v2 Scoring Script (15, 30, 40, Game)
+## 4) Core Server Logic Reference
 
-```lua
--- ServerScriptService/TennisScoring.server.lua
-local ServerStorage = game:GetService("ServerStorage")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+The full server script is in `src/ServerScriptService/TennisGame.server.lua`.
+Key design points:
 
--- Create in Studio:
--- ServerStorage/BindableEvent named "PointScored" (server receives team that won the rally)
--- ReplicatedStorage/RemoteEvent named "ScoreUpdated" (server broadcasts score text/state)
+- **Teams:** uses Roblox `Teams` service; name your teams `"Team A"` and `"Team B"` in Studio.
+  - 1v1: one player on each team.
+  - 2v2: two players on each team.
+- **`TeamA`** (key `"TeamA"`) defends from the z-negative side (z = −39 baseline).
+- **`TeamB`** (key `"TeamB"`) defends from the z-positive side (z = +39 baseline).
+- **Scoring:** Love → 15 → 30 → 40 → Deuce → Advantage → Game; first to 6 games wins a set;
+  first to 2 sets wins the match.
+- **Ball respawn:** happens automatically after each point; serving alternates each game.
 
-local pointScoredEvent = ServerStorage:WaitForChild("PointScored")
-local scoreUpdatedRemote = ReplicatedStorage:WaitForChild("ScoreUpdated") -- RemoteEvent
-assert(pointScoredEvent:IsA("BindableEvent"), "PointScored in ServerStorage must be a BindableEvent")
-assert(scoreUpdatedRemote:IsA("RemoteEvent"), "ScoreUpdated in ReplicatedStorage must be a RemoteEvent")
+### Team assignment (set this up in Teams service in Studio)
 
-local POINT_DISPLAY_VALUES = {"0", "15", "30", "40"}
-local DEUCE_DISPLAY_VALUE = "40"
-
-local matchState = {
-	mode = "2v2", -- "1v1" or "2v2"
-	teams = {
-		Home = {players = {}, rallyPoints = 0, games = 0},
-		Away = {players = {}, rallyPoints = 0, games = 0},
-	}
-}
-
-local function isValidTeamName(teamName)
-	return teamName == "Home" or teamName == "Away"
-end
-
-local function resetPoints()
-	matchState.teams.Home.rallyPoints = 0
-	matchState.teams.Away.rallyPoints = 0
-end
-
-local function getDisplayPoints(teamPoints, otherPoints)
-	if teamPoints < 0 or otherPoints < 0 then
-		return POINT_DISPLAY_VALUES[1]
-	end
-
-	if teamPoints >= 3 and otherPoints >= 3 then
-		if teamPoints == otherPoints then
-			return DEUCE_DISPLAY_VALUE -- Display as 40 when rally is tied at deuce phase
-		elseif teamPoints == otherPoints + 1 then
-			return "Advantage"
-		end
-		return DEUCE_DISPLAY_VALUE -- Trailing side during opponent advantage is still displayed as 40
-	end
-	if teamPoints >= 4 then
-		return DEUCE_DISPLAY_VALUE -- Safety cap for any non-deuce overflow input
-	end
-	return POINT_DISPLAY_VALUES[teamPoints + 1] -- Normal range mapping (0..3) to array indices (1..4)
-end
-
-local function hasGameWon(teamPoints, otherPoints)
-	return teamPoints >= 4 and (teamPoints - otherPoints) >= 2
-end
-
-local function getScoreText(homePoints, awayPoints)
-	if homePoints >= 3 and awayPoints >= 3 and homePoints == awayPoints then
-		return "Deuce"
-	end
-
-	local homeText = getDisplayPoints(homePoints, awayPoints)
-	local awayText = getDisplayPoints(awayPoints, homePoints)
-	return string.format("%s - %s", homeText, awayText)
-end
-
-local function awardPoint(teamName)
-	if not isValidTeamName(teamName) then
-		warn("awardPoint received invalid teamName:", teamName)
-		return
-	end
-	local home = matchState.teams.Home
-	local away = matchState.teams.Away
-
-	if teamName == "Home" then
-		home.rallyPoints += 1
-	else
-		away.rallyPoints += 1
-	end
-
-	if hasGameWon(home.rallyPoints, away.rallyPoints) then
-		home.games += 1
-		resetPoints()
-	elseif hasGameWon(away.rallyPoints, home.rallyPoints) then
-		away.games += 1
-		resetPoints()
-	end
-
-	scoreUpdatedRemote:FireAllClients({
-		mode = matchState.mode,
-		homePoints = home.rallyPoints,
-		awayPoints = away.rallyPoints,
-		homeGames = home.games,
-		awayGames = away.games,
-		scoreText = getScoreText(home.rallyPoints, away.rallyPoints),
-	})
-end
-
-pointScoredEvent.Event:Connect(function(teamName)
-	awardPoint(teamName)
-end)
-
--- Optional: if clients ever need to request a score action, use a separate
--- RemoteEvent and validate player-team ownership before calling awardPoint.
-```
-
-### Team assignment concept
-- **1v1:** `Home.players = {PlayerA}`, `Away.players = {PlayerB}`
-- **2v2:** `Home.players = {PlayerA, PlayerB}`, `Away.players = {PlayerC, PlayerD}`
-- Keep same scoring function; only player-to-team validation changes by mode.
+| Roblox Team Name | Internal key | Side | Spawn position |
+|---|---|---|---|
+| `Team A` | `TeamA` | z < 0 | (0, 3, −20) |
+| `Team B` | `TeamB` | z > 0 | (0, 3, +20) |
 
 ---
 

@@ -36,7 +36,7 @@ local hitBallRemote = ReplicatedStorage:WaitForChild("HitBall") -- RemoteEvent
 
 -- ── Configuration ──────────────────────────────────────────────────────────
 local CFG = {
-	SWING_ANIM_ID      = "rbxassetid://0",   -- ← replace with your animation ID
+	SWING_ANIM_ID      = "rbxassetid://0",   -- ← REQUIRED: replace with your uploaded animation asset ID
 	ANIM_DURATION      = 0.8,                -- seconds for the full swing
 	SWEET_SPOT_START   = 0.30,               -- seconds after swing start
 	SWEET_SPOT_END     = 0.50,               -- seconds after swing start
@@ -56,8 +56,12 @@ local animator = humanoid:WaitForChild("Animator")
 local swingAnimation = Instance.new("Animation")
 swingAnimation.AnimationId = CFG.SWING_ANIM_ID
 
--- Load the track once the tool is equipped
+-- Guard: if the animation ID was not set, skip loading to avoid runtime errors
+local useAnimation = CFG.SWING_ANIM_ID ~= "rbxassetid://0"
+
+-- Load the track once the tool is equipped (only if a valid animation ID is set)
 local function loadAnimTrack()
+	if not useAnimation then return end
 	if animTrack then animTrack:Stop() end
 	animTrack = animator:LoadAnimation(swingAnimation)
 	animTrack.Priority = Enum.AnimationPriority.Action
@@ -129,8 +133,8 @@ local function startSwing()
 	isSwinging     = true
 	swingStartTime = tick()
 
-	-- Play animation
-	if animTrack then
+	-- Play animation (if a valid animation ID is configured)
+	if animTrack and useAnimation then
 		animTrack:Stop()
 		animTrack:Play()
 	end
