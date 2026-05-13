@@ -65,11 +65,11 @@ Add a **CollectionService tag** `"TennisBall"` to the part (via the Tag Editor p
 
 ---
 
-## 2) Build Instructions (Studio Setup)
+## 3) Build Instructions (Studio Setup)
 
 1. **Create court root**
    - Add a `Model` named `TennisArena`.
-   - Add a centered base part named `CourtBase` and size it to:
+   - Add a centered base part named `CourtFloor` and size it to:
      - **Length (Z): 78 studs**
      - **Width (X): 36 studs**
      - **Height (Y): 1 stud**
@@ -97,13 +97,13 @@ Add a **CollectionService tag** `"TennisBall"` to the part (via the Tag Editor p
 
 6. **Arena dressing (optimized low-poly)**
    - Add simple, blocky spectator stands around play zone.
-   - Add one digital scoreboard mesh/part showing **Home vs Away**.
+   - Add one digital scoreboard mesh/part showing **Team A vs Team B**.
    - Add 4 large floodlight towers (corners of arena footprint).
    - Keep meshes low-poly and reuse materials/colors for performance.
 
 ---
 
-## 2) Visual Breakdown (Style Guide)
+## 4) Visual Breakdown (Style Guide)
 
 - **Theme:** Modern Pro Arena, clean and professional.
 - **Palette:**
@@ -119,7 +119,7 @@ Add a **CollectionService tag** `"TennisBall"` to the part (via the Tag Editor p
 
 ---
 
-## 3) OutBounds / KillZone Setup (Touched Detection)
+## 5) OutBounds / KillZone Setup (Touched Detection)
 
 > **Note:** The actual game implementation in `src/ServerScriptService/TennisGame.server.lua`
 > uses `Detector_SideA` and `Detector_SideB` directly with `Touched` events — no extra boundary
@@ -137,7 +137,7 @@ For additional out-of-bounds coverage (side tramlines), you can optionally add:
 
 ---
 
-## 4) Core Server Logic Reference
+## 6) Core Server Logic Reference
 
 The full server script is in `src/ServerScriptService/TennisGame.server.lua`.
 Key design points:
@@ -160,7 +160,7 @@ Key design points:
 
 ---
 
-## 5) Recommended Lighting (Professional Court Look)
+## 7) Recommended Lighting (Professional Court Look)
 
 Set in `Lighting`:
 

@@ -205,9 +205,9 @@ local matchOverText = makeLabel("Text", matchOverBanner, "MATCH OVER",
 
 -- ── Score Update Handler ────────────────────────────────────────────────────
 local function updateHUD(data)
-	-- Rally points
-	pointsA.Text = tostring(data.teamAPoints or "Love")
-	pointsB.Text = tostring(data.teamBPoints or "Love")
+	-- Rally points (already strings like "Love", "15", "30", "40", "Advantage")
+	pointsA.Text = data.teamAPoints or "Love"
+	pointsB.Text = data.teamBPoints or "Love"
 
 	-- Deuce highlight
 	if data.isDeuce then
@@ -220,13 +220,11 @@ local function updateHUD(data)
 		pointsB.TextColor3 = COLOR.scoreText
 	end
 
-	-- Games
+	-- Games and sets (numeric; tostring needed here)
 	gamesA.Text = tostring(data.teamAGames or 0)
 	gamesB.Text = tostring(data.teamBGames or 0)
-
-	-- Sets
-	setsA.Text = tostring(data.teamASets or 0)
-	setsB.Text = tostring(data.teamBSets or 0)
+	setsA.Text  = tostring(data.teamASets  or 0)
+	setsB.Text  = tostring(data.teamBSets  or 0)
 
 	-- Serving indicator
 	if data.serving == "TeamA" then
