@@ -1,5 +1,41 @@
 # Roblox Tennis Game — Modern Pro Arena Blueprint
 
+## Quick Start Guide
+
+### Minimum Setup to Play (5 minutes)
+
+1. **Create Teams** (in Teams service):
+   - Team named `Team A` (BrickColor: Bright blue)
+   - Team named `Team B` (BrickColor: Bright red)
+
+2. **Create RemoteEvents** (in ReplicatedStorage):
+   - RemoteEvent named `ScoreUpdated`
+   - RemoteEvent named `HitBall`
+
+3. **Create TennisArena Model** (in Workspace) with these essential parts:
+   - `CourtFloor`: Block (78, 1, 36) at position (0, 0.5, 0) — Navy blue, Anchored
+   - `Net`: Block (36, 3.5, 0.4) at (0, 2.25, 0) — White, Anchored, CanCollide=true
+   - `TennisBall`: Sphere (1, 1, 1) at (0, 3, -20) — Yellow, NOT anchored
+     - Set CustomPhysicalProperties: Density=0.5, Friction=0.3, Elasticity=0.85
+   - `Detector_SideA`: Block (40, 2, 4) at (0, 1, -51) — Transparent, Anchored, CanCollide=false, CanTouch=true
+   - `Detector_SideB`: Block (40, 2, 4) at (0, 1, 51) — Transparent, Anchored, CanCollide=false, CanTouch=true
+
+4. **Create TennisRacket Tool** (in StarterPack):
+   - Tool named `TennisRacket` with RequiresHandle=true
+   - Add `Handle` part: Block (0.4, 2.5, 0.4) — Any color
+   - Add LocalScript with code from `src/StarterPack/TennisRacket/LocalScript.lua`
+
+5. **Add Scripts**:
+   - Script in ServerScriptService: `src/ServerScriptService/TennisGame.server.lua`
+   - ScreenGui in StarterGui named `ScoreboardGui` with LocalScript: `src/StarterGui/ScoreboardGui/LocalScript.lua`
+   - (Optional) ScreenGui in StarterGui named `MatchControlGui` with LocalScript: `src/StarterGui/MatchControlGui/LocalScript.lua`
+     - Adds a "Reset Match" button for players
+     - Requires `ResetMatch` RemoteEvent in ReplicatedStorage
+
+6. **Test**: Press Play, join a team, pick up the racket, click to swing at the ball!
+
+---
+
 ## Repository File Structure
 
 Copy these files into Roblox Studio exactly as shown:
@@ -9,6 +45,7 @@ Copy these files into Roblox Studio exactly as shown:
 | `src/ServerScriptService/TennisGame.server.lua` | **ServerScriptService** → Script named `TennisGame` |
 | `src/StarterPack/TennisRacket/LocalScript.lua` | **StarterPack** → Tool named `TennisRacket` → LocalScript |
 | `src/StarterGui/ScoreboardGui/LocalScript.lua` | **StarterGui** → ScreenGui named `ScoreboardGui` → LocalScript |
+| `src/StarterGui/MatchControlGui/LocalScript.lua` | **StarterGui** → ScreenGui named `MatchControlGui` → LocalScript (optional) |
 
 ---
 
@@ -24,8 +61,39 @@ Before running the game, create these in the Explorer:
 |---|---|---|---|
 | **ReplicatedStorage** | RemoteEvent | `ScoreUpdated` | Server → all clients (score data) |
 | **ReplicatedStorage** | RemoteEvent | `HitBall` | Client → server (racket hit request) |
+| **ReplicatedStorage** | RemoteEvent | `ResetMatch` | Client → server (optional; for match control UI) |
 | **Teams** | Team | `Team A` | BrickColor: Bright blue |
 | **Teams** | Team | `Team B` | BrickColor: Bright red |
+
+### TennisRacket Tool in StarterPack
+
+Create a **Tool** named `TennisRacket` in **StarterPack** with the following structure:
+
+1. **Tool properties:**
+   - Name: `TennisRacket`
+   - RequiresHandle: true
+   - CanBeDropped: false
+
+2. **Handle part (child of Tool):**
+   - Name: `Handle`
+   - Shape: Block
+   - Size: (0.4, 2.5, 0.4)
+   - Color: Any (suggest bright cyan or team color)
+   - Material: SmoothPlastic
+
+3. **LocalScript (child of Tool):**
+   - Paste the contents of `src/StarterPack/TennisRacket/LocalScript.lua`
+   - **Animation is optional**: The racket works without a custom animation. It uses a simple visual swing effect by default.
+   - To add a custom animation: Upload your animation to Roblox, then set `SWING_ANIM_ID` in the LocalScript to your animation asset ID.
+
+### SpawnLocation Setup
+
+Create spawn locations for each team:
+
+| Service | Type | Name | Position | Properties |
+|---|---|---|---|---|
+| **Workspace** | SpawnLocation | `SpawnA` | 0, 1, -25 | TeamColor: Bright blue, Duration: 0, Neutral: false |
+| **Workspace** | SpawnLocation | `SpawnB` | 0, 1, 25 | TeamColor: Bright red, Duration: 0, Neutral: false |
 
 ### TennisArena Parts
 
@@ -35,6 +103,8 @@ Before running the game, create these in the Explorer:
 | `Net` | Block | 36, 3.5, 0.4 | 0, 2.25, 0 | White | Neon | Anchored, CanCollide = **true** |
 | `Detector_SideA` | Block | 40, 2, 4 | 0, 1, −51 | any | SmoothPlastic | Anchored, Transparency=1, CanCollide=**false**, CanTouch=**true** |
 | `Detector_SideB` | Block | 40, 2, 4 | 0, 1, 51 | any | SmoothPlastic | Anchored, Transparency=1, CanCollide=**false**, CanTouch=**true** |
+| `Detector_Left` | Block | 2, 2, 80 | −20, 1, 0 | any | SmoothPlastic | Anchored, Transparency=1, CanCollide=**false**, CanTouch=**true** |
+| `Detector_Right` | Block | 2, 2, 80 | 20, 1, 0 | any | SmoothPlastic | Anchored, Transparency=1, CanCollide=**false**, CanTouch=**true** |
 | `TennisBall` | **Sphere** | 1, 1, 1 | 0, 3, −20 | Yellow `(255, 220, 50)` | SmoothPlastic | **Not** anchored; see physics below |
 
 ### TennisBall — CustomPhysicalProperties
@@ -178,3 +248,52 @@ Set in `Lighting`:
 Optional polish:
 - Add subtle `ColorCorrectionEffect` (slight contrast/saturation boost).
 - Keep post-processing light for mobile performance.
+
+---
+
+## 8) Testing Checklist — Verify Full Playability
+
+Use this checklist to ensure the game is fully playable:
+
+### Basic Setup Verification
+- [ ] Both teams exist: "Team A" and "Team B" in Teams service
+- [ ] All RemoteEvents exist in ReplicatedStorage: `ScoreUpdated`, `HitBall`, (optional) `ResetMatch`
+- [ ] TennisArena model exists in Workspace with all required parts
+- [ ] TennisBall has CustomPhysicalProperties set (Density=0.5, Friction=0.3, Elasticity=0.85)
+- [ ] TennisBall is NOT anchored and has the "TennisBall" tag
+- [ ] Net has CanCollide = true
+- [ ] All detector parts (SideA, SideB, optional Left/Right) have Transparency=1, CanCollide=false, CanTouch=true
+- [ ] TennisRacket Tool exists in StarterPack with Handle part
+- [ ] All three scripts are properly placed (TennisGame.server, ScoreboardGui, TennisRacket)
+
+### Gameplay Testing
+- [ ] **Join and spawn**: Players spawn on their team's side when joining a team
+- [ ] **Racket works**: Players can equip racket and see swing animation/visual effect
+- [ ] **Ball hit works**: Clicking near the ball applies impulse and moves the ball
+- [ ] **Sweet spot detection**: Hitting during sweet spot window shows golden flash and stronger hit
+- [ ] **Scoring works**: Ball crossing back line awards point to opponent
+- [ ] **Score display updates**: Scoreboard shows correct points, games, and sets
+- [ ] **Serving alternates**: Serve switches to losing team after each game
+- [ ] **Deuce logic**: Points at 40-40 display "Deuce" correctly
+- [ ] **Game win**: Winning 4+ points with 2-point lead wins game
+- [ ] **Set win**: Winning 6+ games with 2-game lead (or 7-6) wins set
+- [ ] **Match win**: Winning 2 sets displays match-over banner
+- [ ] **Auto reset**: Match resets automatically after completion delay
+- [ ] **Manual reset**: Reset Match button works (if MatchControlGui installed)
+- [ ] **Respawn**: Players keep racket and see score after respawning
+- [ ] **Side boundaries**: Ball hitting side detectors (if installed) awards point to opponent
+
+### Multiplayer Testing (if possible)
+- [ ] **1v1**: Two players (one per team) can play a full match
+- [ ] **2v2**: Four players (two per team) can share rallies
+- [ ] **Mid-match join**: Player joining mid-match sees current score immediately
+
+### Polish & UX
+- [ ] Net blocks ball trajectory (ball bounces off net)
+- [ ] Ball physics feel realistic (bounces, rolls naturally)
+- [ ] Scoreboard is visible and readable from court
+- [ ] No script errors in Output window
+- [ ] Performance is smooth (30+ FPS recommended)
+
+If all items are checked, the game is **fully playable**! 🎾
+
