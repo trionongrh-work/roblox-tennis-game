@@ -119,8 +119,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local pointScoredEvent = ServerStorage:WaitForChild("PointScored")
 local scoreUpdatedRemote = ReplicatedStorage:WaitForChild("ScoreUpdated") -- RemoteEvent
-assert(pointScoredEvent:IsA("BindableEvent"), "PointScored must be a BindableEvent")
-assert(scoreUpdatedRemote:IsA("RemoteEvent"), "ScoreUpdated must be a RemoteEvent")
+assert(pointScoredEvent:IsA("BindableEvent"), "PointScored in ServerStorage must be a BindableEvent")
+assert(scoreUpdatedRemote:IsA("RemoteEvent"), "ScoreUpdated in ReplicatedStorage must be a RemoteEvent")
 
 local POINT_DISPLAY_VALUES = {"0", "15", "30", "40"}
 
@@ -144,13 +144,13 @@ end
 local function getDisplayPoints(teamPoints, otherPoints)
 	if teamPoints >= 3 and otherPoints >= 3 then
 		if teamPoints == otherPoints then
-			return "40" -- Deuce shown as 40-40 on board text below
+			return "40" -- Display as 40 when rally is tied at deuce phase
 		elseif teamPoints == otherPoints + 1 then
 			return "Advantage"
 		end
 		return "40" -- Trailing side during opponent advantage is still displayed as 40
 	end
-	return POINT_DISPLAY_VALUES[math.min(teamPoints + 1, 4)] -- Capped to highest normal point display (40)
+	return POINT_DISPLAY_VALUES[math.min(teamPoints + 1, 4)] -- Normal range mapping (0..3) to array indices (1..4)
 end
 
 local function hasGameWon(teamPoints, otherPoints)
