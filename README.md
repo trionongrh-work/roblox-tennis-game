@@ -122,7 +122,7 @@ local scoreUpdatedRemote = ReplicatedStorage:WaitForChild("ScoreUpdated") -- Rem
 assert(pointScoredEvent:IsA("BindableEvent"), "PointScored must be a BindableEvent")
 assert(scoreUpdatedRemote:IsA("RemoteEvent"), "ScoreUpdated must be a RemoteEvent")
 
-local SCORE_TEXT = {"0", "15", "30", "40"}
+local POINT_DISPLAY_VALUES = {"0", "15", "30", "40"}
 
 local matchState = {
 	mode = "2v2", -- "1v1" or "2v2"
@@ -150,7 +150,7 @@ local function getDisplayPoints(teamPoints, otherPoints)
 		end
 		return "40" -- Trailing side during opponent advantage is still displayed as 40
 	end
-	return SCORE_TEXT[math.min(teamPoints + 1, 4)]
+	return POINT_DISPLAY_VALUES[math.min(teamPoints + 1, 4)]
 end
 
 local function hasGameWon(teamPoints, otherPoints)
@@ -193,8 +193,8 @@ local function awardPoint(teamName)
 		mode = matchState.mode,
 		homePoints = home.rallyPoints,
 		awayPoints = away.rallyPoints,
-		homeGames = matchState.teams.Home.games,
-		awayGames = matchState.teams.Away.games,
+		homeGames = home.games,
+		awayGames = away.games,
 		scoreText = getScoreText(home.rallyPoints, away.rallyPoints),
 	})
 end
