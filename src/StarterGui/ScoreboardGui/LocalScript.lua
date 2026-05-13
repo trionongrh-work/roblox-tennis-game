@@ -89,7 +89,7 @@ local function makeLabel(name, parent, text, size, position, textColor, fontSize
 end
 
 -- ── Main panel ──────────────────────────────────────────────────────────────
--- Anchored top-right, 260 × 280 px
+-- Anchored top-right, 260 × 290 px
 local panel = makeFrame("ScorePanel", screenGui,
 	UDim2.new(0, 260, 0, 290),
 	UDim2.new(1, -275, 0, 20),
