@@ -78,7 +78,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local pointScoredEvent = ServerStorage:WaitForChild("PointScored") -- BindableEvent (server-only scoring signal)
 
 local function isBall(part)
-	return part and (CollectionService:HasTag(part, "TennisBall") or part:GetAttribute("IsTennisBall") == true)
+	return part and CollectionService:HasTag(part, "TennisBall")
 end
 
 local function onOutBoundsTouched(zone, hitPart)
@@ -148,7 +148,7 @@ local function getDisplayPoints(teamPoints, otherPoints)
 		elseif teamPoints == otherPoints + 1 then
 			return "Ad"
 		end
-		return "40"
+		return "40" -- Trailing side during opponent advantage is still displayed as 40
 	end
 	return SCORE_TEXT[math.min(teamPoints + 1, 4)]
 end
@@ -168,7 +168,10 @@ local function getScoreText(homePoints, awayPoints)
 end
 
 local function awardPoint(teamName)
-	if not isValidTeamName(teamName) then return end
+	if not isValidTeamName(teamName) then
+		warn("awardPoint received invalid teamName:", teamName)
+		return
+	end
 	local home = matchState.teams.Home
 	local away = matchState.teams.Away
 
