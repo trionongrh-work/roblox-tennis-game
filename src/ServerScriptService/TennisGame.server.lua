@@ -36,6 +36,10 @@ local detectorA  = arena:WaitForChild("Detector_SideA")
 local detectorB  = arena:WaitForChild("Detector_SideB")
 local ball       = arena:WaitForChild("TennisBall")
 
+-- Optional side detectors (out of bounds on tramlines)
+local detectorLeft  = arena:FindFirstChild("Detector_Left")
+local detectorRight = arena:FindFirstChild("Detector_Right")
+
 -- ── Configuration ──────────────────────────────────────────────────────────
 local CFG = {
 	ballRespawnDelay  = 2,       -- seconds to wait before respawning the ball
@@ -212,6 +216,32 @@ detectorB.Touched:Connect(function(hit)
 	end
 end)
 
+-- Side detectors (out of bounds on tramlines)
+-- Award point to last hitting team's opponent
+if detectorLeft then
+	detectorLeft.Touched:Connect(function(hit)
+		if not isBall(hit) then return end
+		local lastTeam = ball:GetAttribute("LastHitTeam")
+		if lastTeam == "TeamA" then
+			awardPoint("TeamB")
+		elseif lastTeam == "TeamB" then
+			awardPoint("TeamA")
+		end
+	end)
+end
+
+if detectorRight then
+	detectorRight.Touched:Connect(function(hit)
+		if not isBall(hit) then return end
+		local lastTeam = ball:GetAttribute("LastHitTeam")
+		if lastTeam == "TeamA" then
+			awardPoint("TeamB")
+		elseif lastTeam == "TeamB" then
+			awardPoint("TeamA")
+		end
+	end)
+end
+
 -- ── Racket Hit (from RacketHandler / client RemoteEvent) ────────────────────
 -- Clients fire HitBall with (direction: Vector3, isSweetSpot: boolean)
 -- The server validates the request and applies impulse to the ball.
@@ -251,6 +281,36 @@ hitBallRemote.OnServerEvent:Connect(function(player, direction, isSweetSpot)
 end)
 
 -- ── Startup ─────────────────────────────────────────────────────────────────
+-- Validate ball physics configuration
+if ball:IsA("BasePart") then
+	-- Ensure ball has CollectionService tag
+	if not CollectionService:HasTag(ball, "TennisBall") then
+		CollectionService:AddTag(ball, "TennisBall")
+		warn("[TennisGame] Added missing 'TennisBall' tag to ball part")
+	end
+
+	-- Validate physics properties
+	local props = ball.CustomPhysicalProperties
+	if not props then
+		warn("[TennisGame] Warning: TennisBall does not have CustomPhysicalProperties set!")
+		warn("  Set Density=0.5, Friction=0.3, Elasticity=0.85 for best gameplay")
+	else
+		-- Check if properties are close to recommended values
+		if math.abs(props.Density - 0.5) > 0.1 then
+			warn(string.format("[TennisGame] Ball Density is %.2f (recommended: 0.5)", props.Density))
+		end
+		if math.abs(props.Elasticity - 0.85) > 0.1 then
+			warn(string.format("[TennisGame] Ball Elasticity is %.2f (recommended: 0.85)", props.Elasticity))
+		end
+	end
+
+	-- Ensure ball is not anchored
+	if ball.Anchored then
+		ball.Anchored = false
+		warn("[TennisGame] Ball was anchored - unanchored it automatically")
+	end
+end
+
 state.rallyActive = true
 broadcastScore()
 print("[TennisGame] Server ready — rally active.")

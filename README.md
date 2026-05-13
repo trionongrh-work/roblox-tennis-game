@@ -1,5 +1,38 @@
 # Roblox Tennis Game — Modern Pro Arena Blueprint
 
+## Quick Start Guide
+
+### Minimum Setup to Play (5 minutes)
+
+1. **Create Teams** (in Teams service):
+   - Team named `Team A` (BrickColor: Bright blue)
+   - Team named `Team B` (BrickColor: Bright red)
+
+2. **Create RemoteEvents** (in ReplicatedStorage):
+   - RemoteEvent named `ScoreUpdated`
+   - RemoteEvent named `HitBall`
+
+3. **Create TennisArena Model** (in Workspace) with these essential parts:
+   - `CourtFloor`: Block (78, 1, 36) at position (0, 0.5, 0) — Navy blue, Anchored
+   - `Net`: Block (36, 3.5, 0.4) at (0, 2.25, 0) — White, Anchored, CanCollide=true
+   - `TennisBall`: Sphere (1, 1, 1) at (0, 3, -20) — Yellow, NOT anchored
+     - Set CustomPhysicalProperties: Density=0.5, Friction=0.3, Elasticity=0.85
+   - `Detector_SideA`: Block (40, 2, 4) at (0, 1, -51) — Transparent, Anchored, CanCollide=false, CanTouch=true
+   - `Detector_SideB`: Block (40, 2, 4) at (0, 1, 51) — Transparent, Anchored, CanCollide=false, CanTouch=true
+
+4. **Create TennisRacket Tool** (in StarterPack):
+   - Tool named `TennisRacket` with RequiresHandle=true
+   - Add `Handle` part: Block (0.4, 2.5, 0.4) — Any color
+   - Add LocalScript with code from `src/StarterPack/TennisRacket/LocalScript.lua`
+
+5. **Add Scripts**:
+   - Script in ServerScriptService: `src/ServerScriptService/TennisGame.server.lua`
+   - ScreenGui in StarterGui named `ScoreboardGui` with LocalScript: `src/StarterGui/ScoreboardGui/LocalScript.lua`
+
+6. **Test**: Press Play, join a team, pick up the racket, click to swing at the ball!
+
+---
+
 ## Repository File Structure
 
 Copy these files into Roblox Studio exactly as shown:
@@ -27,6 +60,36 @@ Before running the game, create these in the Explorer:
 | **Teams** | Team | `Team A` | BrickColor: Bright blue |
 | **Teams** | Team | `Team B` | BrickColor: Bright red |
 
+### TennisRacket Tool in StarterPack
+
+Create a **Tool** named `TennisRacket` in **StarterPack** with the following structure:
+
+1. **Tool properties:**
+   - Name: `TennisRacket`
+   - RequiresHandle: true
+   - CanBeDropped: false
+
+2. **Handle part (child of Tool):**
+   - Name: `Handle`
+   - Shape: Block
+   - Size: (0.4, 2.5, 0.4)
+   - Color: Any (suggest bright cyan or team color)
+   - Material: SmoothPlastic
+
+3. **LocalScript (child of Tool):**
+   - Paste the contents of `src/StarterPack/TennisRacket/LocalScript.lua`
+   - **Animation is optional**: The racket works without a custom animation. It uses a simple visual swing effect by default.
+   - To add a custom animation: Upload your animation to Roblox, then set `SWING_ANIM_ID` in the LocalScript to your animation asset ID.
+
+### SpawnLocation Setup
+
+Create spawn locations for each team:
+
+| Service | Type | Name | Position | Properties |
+|---|---|---|---|---|
+| **Workspace** | SpawnLocation | `SpawnA` | 0, 1, -25 | TeamColor: Bright blue, Duration: 0, Neutral: false |
+| **Workspace** | SpawnLocation | `SpawnB` | 0, 1, 25 | TeamColor: Bright red, Duration: 0, Neutral: false |
+
 ### TennisArena Parts
 
 | Name | Shape | Size (X, Y, Z) | Position (X, Y, Z) | Color | Material | Notes |
@@ -35,6 +98,8 @@ Before running the game, create these in the Explorer:
 | `Net` | Block | 36, 3.5, 0.4 | 0, 2.25, 0 | White | Neon | Anchored, CanCollide = **true** |
 | `Detector_SideA` | Block | 40, 2, 4 | 0, 1, −51 | any | SmoothPlastic | Anchored, Transparency=1, CanCollide=**false**, CanTouch=**true** |
 | `Detector_SideB` | Block | 40, 2, 4 | 0, 1, 51 | any | SmoothPlastic | Anchored, Transparency=1, CanCollide=**false**, CanTouch=**true** |
+| `Detector_Left` | Block | 2, 2, 80 | −20, 1, 0 | any | SmoothPlastic | Anchored, Transparency=1, CanCollide=**false**, CanTouch=**true** |
+| `Detector_Right` | Block | 2, 2, 80 | 20, 1, 0 | any | SmoothPlastic | Anchored, Transparency=1, CanCollide=**false**, CanTouch=**true** |
 | `TennisBall` | **Sphere** | 1, 1, 1 | 0, 3, −20 | Yellow `(255, 220, 50)` | SmoothPlastic | **Not** anchored; see physics below |
 
 ### TennisBall — CustomPhysicalProperties

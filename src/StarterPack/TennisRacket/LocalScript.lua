@@ -36,7 +36,7 @@ local hitBallRemote = ReplicatedStorage:WaitForChild("HitBall") -- RemoteEvent
 
 -- ── Configuration ──────────────────────────────────────────────────────────
 local CFG = {
-	SWING_ANIM_ID      = "rbxassetid://0",   -- ← REQUIRED: replace with your uploaded animation asset ID
+	SWING_ANIM_ID      = "rbxassetid://0",   -- Optional: replace with your uploaded animation asset ID (0 = no animation)
 	ANIM_DURATION      = 0.8,                -- seconds for the full swing
 	SWEET_SPOT_START   = 0.30,               -- seconds after swing start
 	SWEET_SPOT_END     = 0.50,               -- seconds after swing start
@@ -140,6 +140,21 @@ local function startSwing()
 	if animTrack and useAnimation then
 		animTrack:Stop()
 		animTrack:Play()
+	else
+		-- Fallback: simple visual swing using tool grip manipulation
+		local handle = tool:FindFirstChild("Handle")
+		if handle and tool.Parent == character then
+			local originalC0 = tool.Grip
+			-- Swing motion: rotate the racket forward
+			local swingC0 = originalC0 * CFrame.Angles(math.rad(-90), 0, 0)
+			tool.Grip = swingC0
+			-- Return to original position after swing duration
+			task.delay(CFG.ANIM_DURATION, function()
+				if tool and tool.Parent == character then
+					tool.Grip = originalC0
+				end
+			end)
+		end
 	end
 
 	-- Poll for hit during the sweet-spot window; fall back to a late hit after the window
