@@ -78,7 +78,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local pointScoredEvent = ServerStorage:WaitForChild("PointScored") -- BindableEvent (server-only scoring signal)
 
 local function isBall(part)
-	return part and part.Name == "TennisBall"
+	return part and (CollectionService:HasTag(part, "TennisBall") or part:GetAttribute("IsTennisBall") == true)
 end
 
 local function onOutBoundsTouched(zone, hitPart)
@@ -119,14 +119,16 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local pointScoredEvent = ServerStorage:WaitForChild("PointScored")
 local scoreUpdatedRemote = ReplicatedStorage:WaitForChild("ScoreUpdated") -- RemoteEvent
+assert(pointScoredEvent:IsA("BindableEvent"), "PointScored must be a BindableEvent")
+assert(scoreUpdatedRemote:IsA("RemoteEvent"), "ScoreUpdated must be a RemoteEvent")
 
-local SCORE_STEPS = {0, 15, 30, 40}
+local SCORE_TEXT = {"0", "15", "30", "40"}
 
 local matchState = {
 	mode = "2v2", -- "1v1" or "2v2"
 	teams = {
-		Home = {players = {}, pointIndex = 1, games = 0},
-		Away = {players = {}, pointIndex = 1, games = 0},
+		Home = {players = {}, rallyPoints = 0, games = 0},
+		Away = {players = {}, rallyPoints = 0, games = 0},
 	}
 }
 
@@ -135,35 +137,62 @@ local function isValidTeamName(teamName)
 end
 
 local function resetPoints()
-	matchState.teams.Home.pointIndex = 1
-	matchState.teams.Away.pointIndex = 1
+	matchState.teams.Home.rallyPoints = 0
+	matchState.teams.Away.rallyPoints = 0
 end
 
-local function getScoreText()
-	local h = SCORE_STEPS[matchState.teams.Home.pointIndex]
-	local a = SCORE_STEPS[matchState.teams.Away.pointIndex]
-	return string.format("%d - %d", h, a)
+local function getDisplayPoints(teamPoints, otherPoints)
+	if teamPoints >= 3 and otherPoints >= 3 then
+		if teamPoints == otherPoints then
+			return "40" -- Deuce shown as 40-40 on board text below
+		elseif teamPoints == otherPoints + 1 then
+			return "Ad"
+		end
+		return "40"
+	end
+	return SCORE_TEXT[math.min(teamPoints + 1, 4)]
+end
+
+local function hasGameWon(teamPoints, otherPoints)
+	return teamPoints >= 4 and (teamPoints - otherPoints) >= 2
+end
+
+local function getScoreText(homePoints, awayPoints)
+	if homePoints >= 3 and awayPoints >= 3 and homePoints == awayPoints then
+		return "Deuce"
+	end
+
+	local homeText = getDisplayPoints(homePoints, awayPoints)
+	local awayText = getDisplayPoints(awayPoints, homePoints)
+	return string.format("%s - %s", homeText, awayText)
 end
 
 local function awardPoint(teamName)
 	if not isValidTeamName(teamName) then return end
-	local team = matchState.teams[teamName]
+	local home = matchState.teams.Home
+	local away = matchState.teams.Away
 
-	if team.pointIndex < #SCORE_STEPS then
-		team.pointIndex += 1
+	if teamName == "Home" then
+		home.rallyPoints += 1
 	else
-		-- Reached Game (after 40 -> Game)
-		team.games += 1
+		away.rallyPoints += 1
+	end
+
+	if hasGameWon(home.rallyPoints, away.rallyPoints) then
+		home.games += 1
+		resetPoints()
+	elseif hasGameWon(away.rallyPoints, home.rallyPoints) then
+		away.games += 1
 		resetPoints()
 	end
 
 	scoreUpdatedRemote:FireAllClients({
 		mode = matchState.mode,
-		homePoints = SCORE_STEPS[matchState.teams.Home.pointIndex],
-		awayPoints = SCORE_STEPS[matchState.teams.Away.pointIndex],
+		homePoints = home.rallyPoints,
+		awayPoints = away.rallyPoints,
 		homeGames = matchState.teams.Home.games,
 		awayGames = matchState.teams.Away.games,
-		scoreText = getScoreText(),
+		scoreText = getScoreText(home.rallyPoints, away.rallyPoints),
 	})
 end
 
@@ -192,7 +221,7 @@ Set in `Lighting`:
 - `EnvironmentSpecularScale = 0.65`
 - `GlobalShadows = true`
 - `ShadowSoftness = 0.2`
-- `ClockTime = 19.0` (evening match under floodlights)
+- `ClockTime = 20.5` (night match under floodlights)
 - `ExposureCompensation = 0.05`
 - `Ambient = Color3.fromRGB(70, 78, 92)`
 - `OutdoorAmbient = Color3.fromRGB(90, 98, 112)`
