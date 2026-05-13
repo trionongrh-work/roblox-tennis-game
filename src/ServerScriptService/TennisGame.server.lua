@@ -30,6 +30,9 @@ local hitBallRemote      = ReplicatedStorage:WaitForChild("HitBall")      -- Rem
 assert(scoreUpdatedRemote:IsA("RemoteEvent"), "ScoreUpdated must be a RemoteEvent in ReplicatedStorage")
 assert(hitBallRemote:IsA("RemoteEvent"),      "HitBall must be a RemoteEvent in ReplicatedStorage")
 
+-- Optional: ResetMatch RemoteEvent for match control UI
+local resetMatchRemote = ReplicatedStorage:FindFirstChild("ResetMatch")
+
 -- ── Arena Parts ────────────────────────────────────────────────────────────
 local arena      = workspace:WaitForChild("TennisArena")
 local detectorA  = arena:WaitForChild("Detector_SideA")
@@ -279,6 +282,28 @@ hitBallRemote.OnServerEvent:Connect(function(player, direction, isSweetSpot)
 		ball:SetAttribute("LastHitTeam", teamKey)
 	end
 end)
+
+-- ── Player Management ───────────────────────────────────────────────────────
+-- Handle player respawn: ensure they keep their racket and see current score
+Players.PlayerAdded:Connect(function(player)
+	-- Broadcast current score to newly joined player
+	player.CharacterAdded:Connect(function(character)
+		task.wait(0.5)  -- small delay to ensure client is ready
+		broadcastScore()
+	end)
+end)
+
+-- Handle match reset requests (if ResetMatch RemoteEvent exists)
+if resetMatchRemote and resetMatchRemote:IsA("RemoteEvent") then
+	resetMatchRemote.OnServerEvent:Connect(function(player)
+		-- Validate player is on a team
+		local teamKey = getTeamOfPlayer(player)
+		if teamKey then
+			print("[TennisGame] Match reset requested by", player.Name)
+			resetMatch()
+		end
+	end)
+end
 
 -- ── Startup ─────────────────────────────────────────────────────────────────
 -- Validate ball physics configuration

@@ -28,6 +28,9 @@
 5. **Add Scripts**:
    - Script in ServerScriptService: `src/ServerScriptService/TennisGame.server.lua`
    - ScreenGui in StarterGui named `ScoreboardGui` with LocalScript: `src/StarterGui/ScoreboardGui/LocalScript.lua`
+   - (Optional) ScreenGui in StarterGui named `MatchControlGui` with LocalScript: `src/StarterGui/MatchControlGui/LocalScript.lua`
+     - Adds a "Reset Match" button for players
+     - Requires `ResetMatch` RemoteEvent in ReplicatedStorage
 
 6. **Test**: Press Play, join a team, pick up the racket, click to swing at the ball!
 
@@ -42,6 +45,7 @@ Copy these files into Roblox Studio exactly as shown:
 | `src/ServerScriptService/TennisGame.server.lua` | **ServerScriptService** → Script named `TennisGame` |
 | `src/StarterPack/TennisRacket/LocalScript.lua` | **StarterPack** → Tool named `TennisRacket` → LocalScript |
 | `src/StarterGui/ScoreboardGui/LocalScript.lua` | **StarterGui** → ScreenGui named `ScoreboardGui` → LocalScript |
+| `src/StarterGui/MatchControlGui/LocalScript.lua` | **StarterGui** → ScreenGui named `MatchControlGui` → LocalScript (optional) |
 
 ---
 
@@ -57,6 +61,7 @@ Before running the game, create these in the Explorer:
 |---|---|---|---|
 | **ReplicatedStorage** | RemoteEvent | `ScoreUpdated` | Server → all clients (score data) |
 | **ReplicatedStorage** | RemoteEvent | `HitBall` | Client → server (racket hit request) |
+| **ReplicatedStorage** | RemoteEvent | `ResetMatch` | Client → server (optional; for match control UI) |
 | **Teams** | Team | `Team A` | BrickColor: Bright blue |
 | **Teams** | Team | `Team B` | BrickColor: Bright red |
 
@@ -243,3 +248,52 @@ Set in `Lighting`:
 Optional polish:
 - Add subtle `ColorCorrectionEffect` (slight contrast/saturation boost).
 - Keep post-processing light for mobile performance.
+
+---
+
+## 8) Testing Checklist — Verify Full Playability
+
+Use this checklist to ensure the game is fully playable:
+
+### Basic Setup Verification
+- [ ] Both teams exist: "Team A" and "Team B" in Teams service
+- [ ] All RemoteEvents exist in ReplicatedStorage: `ScoreUpdated`, `HitBall`, (optional) `ResetMatch`
+- [ ] TennisArena model exists in Workspace with all required parts
+- [ ] TennisBall has CustomPhysicalProperties set (Density=0.5, Friction=0.3, Elasticity=0.85)
+- [ ] TennisBall is NOT anchored and has the "TennisBall" tag
+- [ ] Net has CanCollide = true
+- [ ] All detector parts (SideA, SideB, optional Left/Right) have Transparency=1, CanCollide=false, CanTouch=true
+- [ ] TennisRacket Tool exists in StarterPack with Handle part
+- [ ] All three scripts are properly placed (TennisGame.server, ScoreboardGui, TennisRacket)
+
+### Gameplay Testing
+- [ ] **Join and spawn**: Players spawn on their team's side when joining a team
+- [ ] **Racket works**: Players can equip racket and see swing animation/visual effect
+- [ ] **Ball hit works**: Clicking near the ball applies impulse and moves the ball
+- [ ] **Sweet spot detection**: Hitting during sweet spot window shows golden flash and stronger hit
+- [ ] **Scoring works**: Ball crossing back line awards point to opponent
+- [ ] **Score display updates**: Scoreboard shows correct points, games, and sets
+- [ ] **Serving alternates**: Serve switches to losing team after each game
+- [ ] **Deuce logic**: Points at 40-40 display "Deuce" correctly
+- [ ] **Game win**: Winning 4+ points with 2-point lead wins game
+- [ ] **Set win**: Winning 6+ games with 2-game lead (or 7-6) wins set
+- [ ] **Match win**: Winning 2 sets displays match-over banner
+- [ ] **Auto reset**: Match resets automatically after completion delay
+- [ ] **Manual reset**: Reset Match button works (if MatchControlGui installed)
+- [ ] **Respawn**: Players keep racket and see score after respawning
+- [ ] **Side boundaries**: Ball hitting side detectors (if installed) awards point to opponent
+
+### Multiplayer Testing (if possible)
+- [ ] **1v1**: Two players (one per team) can play a full match
+- [ ] **2v2**: Four players (two per team) can share rallies
+- [ ] **Mid-match join**: Player joining mid-match sees current score immediately
+
+### Polish & UX
+- [ ] Net blocks ball trajectory (ball bounces off net)
+- [ ] Ball physics feel realistic (bounces, rolls naturally)
+- [ ] Scoreboard is visible and readable from court
+- [ ] No script errors in Output window
+- [ ] Performance is smooth (30+ FPS recommended)
+
+If all items are checked, the game is **fully playable**! 🎾
+
