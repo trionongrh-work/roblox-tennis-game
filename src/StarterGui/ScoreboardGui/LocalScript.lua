@@ -30,7 +30,7 @@ local player = Players.LocalPlayer
 -- Wait for the RemoteEvent before doing anything else
 local scoreUpdatedRemote = ReplicatedStorage:WaitForChild("ScoreUpdated") -- RemoteEvent
 
--- ── Colour palette ──────────────────────────────────────────────────────────
+-- ── Color palette ───────────────────────────────────────────────────────────
 local COLOR = {
 	background  = Color3.fromRGB(15,  20,  35),   -- deep navy
 	header      = Color3.fromRGB(22,  88, 180),   -- professional blue

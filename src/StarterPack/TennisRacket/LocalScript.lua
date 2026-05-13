@@ -125,12 +125,15 @@ local function attemptHit()
 end
 
 -- ── Swing Connection ────────────────────────────────────────────────────────
--- RunService.Heartbeat checks for the hit opportunity during the swing window.
+-- RunService.Heartbeat polls for a hit during the swing window.
+-- hitRegistered ensures only one hit fires per swing (prevents duplicate RemoteEvent fires).
 local swingConnection = nil
+local hitRegistered   = false
 
 local function startSwing()
 	if isSwinging then return end
 	isSwinging     = true
+	hitRegistered  = false
 	swingStartTime = tick()
 
 	-- Play animation (if a valid animation ID is configured)
@@ -139,15 +142,26 @@ local function startSwing()
 		animTrack:Play()
 	end
 
-	-- Poll for hit during the sweet-spot window; stop after swing duration
+	-- Poll for hit during the sweet-spot window; fall back to a late hit after the window
 	swingConnection = RunService.Heartbeat:Connect(function()
+		if hitRegistered then
+			-- Hit already registered; wait out the swing duration then clean up
+			if (tick() - swingStartTime) > CFG.ANIM_DURATION then
+				swingConnection:Disconnect()
+				swingConnection = nil
+			end
+			return
+		end
+
 		local elapsed = tick() - swingStartTime
+
 		if elapsed >= CFG.SWEET_SPOT_START and elapsed <= CFG.SWEET_SPOT_END then
+			-- Sweet-spot window: attempt hit and mark as registered
+			hitRegistered = true
 			attemptHit()
-			swingConnection:Disconnect()
-			swingConnection = nil
 		elseif elapsed > CFG.ANIM_DURATION then
-			-- Swing ended with no sweet-spot: attempt a late hit anyway
+			-- Swing ended without sweet-spot hit: attempt a late hit as fallback
+			hitRegistered = true
 			attemptHit()
 			swingConnection:Disconnect()
 			swingConnection = nil

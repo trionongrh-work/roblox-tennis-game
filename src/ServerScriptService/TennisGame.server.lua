@@ -49,8 +49,8 @@ local CFG = {
 
 -- Respawn CFrames: Side A serves from z=-20, Side B from z=+20
 local SPAWN_CF = {
-	TeamA = CFrame.new(0, 3, -20),
-	TeamB = CFrame.new(0, 3,  20),
+	TeamA = CFrame.new(0, 3, -20),  -- Side A server's position
+	TeamB = CFrame.new(0, 3, 20),   -- Side B server's position
 }
 
 -- Tennis rally-point → display label
@@ -108,7 +108,7 @@ end
 -- Returns true if `team` has won the current set
 local function hasWonSet(ownGames, oppGames)
 	if ownGames >= 6 and (ownGames - oppGames) >= 2 then return true end
-	if ownGames == 7 and oppGames <= 6              then return true end  -- 7-5 or tiebreak 7-6
+	if ownGames == 7 and oppGames <= 6 then return true end -- 7-5 or tiebreak 7-6
 	return false
 end
 
